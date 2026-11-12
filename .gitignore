@@ -1,0 +1,9 @@
+/vendor/
+/fixtures/*
+!/fixtures/.gitkeep
+/reports/*
+!/reports/.gitkeep
+/profiles/*
+!/profiles/.gitkeep
+/.phpunit.result.cache
+.DS_Store

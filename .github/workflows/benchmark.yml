@@ -1,0 +1,89 @@
+name: FiQueLa benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      sizes:
+        description: Comma-separated fixture sizes
+        type: string
+        default: '10000'
+      scenarios:
+        description: Scenario names separated by commas, or default or all
+        type: string
+        default: csv_scan,csv_where,xml_where
+      repeat:
+        description: Measured iterations per scenario and size
+        type: number
+        default: 5
+      warmup:
+        description: Warm-up iterations per scenario and size
+        type: number
+        default: 1
+      profile:
+        description: Optional profile mode
+        type: choice
+        options:
+          - none
+          - phase
+          - explain
+          - xdebug
+        default: none
+      profile_scenario:
+        description: Scenario to profile
+        type: string
+        default: csv_where
+      profile_size:
+        description: Fixture size for profiling
+        type: number
+        default: 10000
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, mbstring, xmlreader, simplexml, fileinfo, iconv, zip
+          coverage: ${{ inputs.profile == 'xdebug' && 'xdebug' || 'none' }}
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run benchmarks
+        env:
+          BENCH_SIZES: ${{ inputs.sizes }}
+          BENCH_SCENARIOS: ${{ inputs.scenarios }}
+          BENCH_REPEAT: ${{ inputs.repeat }}
+          BENCH_WARMUP: ${{ inputs.warmup }}
+        run: |
+          composer bench:run -- --sizes="$BENCH_SIZES" --scenarios="$BENCH_SCENARIOS" \
+            --repeat="$BENCH_REPEAT" --warmup="$BENCH_WARMUP" --out=reports/ci
+      - name: Publish benchmark summary
+        if: ${{ !cancelled() && hashFiles('reports/ci/summary.md') != '' }}
+        run: cat reports/ci/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload benchmark reports
+        if: ${{ !cancelled() && hashFiles('reports/ci/results.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports
+          path: reports/ci/
+          if-no-files-found: error
+      - name: Profile a scenario
+        if: ${{ inputs.profile != 'none' }}
+        env:
+          PROFILE_TYPE: ${{ inputs.profile }}
+          PROFILE_SCENARIO: ${{ inputs.profile_scenario }}
+          PROFILE_SIZE: ${{ inputs.profile_size }}
+        run: |
+          composer bench:profile -- --type="$PROFILE_TYPE" --scenario="$PROFILE_SCENARIO" \
+            --size="$PROFILE_SIZE" --out=profiles/ci
+      - name: Upload profile
+        if: ${{ inputs.profile != 'none' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-profile
+          path: profiles/ci/
+          if-no-files-found: error

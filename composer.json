@@ -1,0 +1,47 @@
+{
+  "name": "fiquela/benchmarks",
+  "description": "Reproducible end-to-end benchmarks and optional profiles for FiQueLa",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.2",
+    "1biot/fiquela": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "FiQueLaBench\\": "src/"
+    }
+  },
+  "scripts": {
+    "bench:list": "@php bin/list.php",
+    "bench:generate": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php bin/generate.php"
+    ],
+    "bench:run": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php bin/run.php"
+    ],
+    "bench:profile": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php bin/profile.php"
+    ],
+    "bench:compare": "@php bin/compare.php",
+    "bench:smoke": "@php tests/smoke.php",
+    "bench:smoke:fql": "@php tests/fql-smoke.php",
+    "bench:test": [
+      "@bench:smoke",
+      "@bench:smoke:fql"
+    ]
+  },
+  "scripts-descriptions": {
+    "bench:list": "List benchmark scenarios.",
+    "bench:generate": "Generate deterministic fixtures.",
+    "bench:run": "Run benchmarks and write JSON, CSV and Markdown reports.",
+    "bench:profile": "Profile one scenario using phase timings, EXPLAIN ANALYZE or Xdebug.",
+    "bench:compare": "Compare two benchmark reports.",
+    "bench:smoke": "Run the benchmark harness smoke test.",
+    "bench:smoke:fql": "Smoke-test FiQueLa queries and EXPLAIN ANALYZE.",
+    "bench:test": "Run both smoke test suites."
+  }
+}

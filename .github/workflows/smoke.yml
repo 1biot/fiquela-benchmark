@@ -1,0 +1,24 @@
+name: Benchmark harness smoke
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, mbstring, xmlreader, simplexml, fileinfo, iconv, zip
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer bench:test
